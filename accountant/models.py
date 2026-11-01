@@ -178,18 +178,41 @@ class RefTypeRule(models.Model):
 
 
 class ReasonRule(models.Model):
+    class MatchType(models.TextChoices):
+        EXACT = "exact", "Exact (case-sensitive)"
+        IEXACT = "iexact", "Exact (case-insensitive)"
+        CONTAINS = "contains", "Contains (case-sensitive)"
+        ICONTAINS = "icontains", "Contains (case-insensitive)"
+
     ref_rule = models.ForeignKey(RefTypeRule, on_delete=models.CASCADE, related_name="reason_rules")
     reason = models.CharField(
-        max_length=512, help_text="Exact, case-sensitive ESI reason (spaces are significant)."
+        max_length=512,
+        help_text="Reason text or keyword, without quotes. Match type controls comparison; "
+        "spaces are significant.",
     )
+    match_type = models.CharField(max_length=9, choices=MatchType.choices, default=MatchType.EXACT)
     display_name = models.CharField(max_length=128)
     order = models.PositiveSmallIntegerField(default=100)
 
     class Meta:
-        ordering = ("order", "display_name")
+        ordering = ("order", "pk")
         constraints = [
-            models.UniqueConstraint(fields=("ref_rule", "reason"), name="acct_unique_reason_rule"),
+            models.UniqueConstraint(
+                fields=("ref_rule", "reason", "match_type"), name="acct_unique_reason_rule"
+            ),
         ]
+
+    def matches(self, reason):
+        if not self.reason:
+            return False
+        text, pattern = reason or "", self.reason
+        if self.match_type in (self.MatchType.IEXACT, self.MatchType.ICONTAINS):
+            text, pattern = text.casefold(), pattern.casefold()
+        if self.match_type in (self.MatchType.EXACT, self.MatchType.IEXACT):
+            return text == pattern
+        if self.match_type in (self.MatchType.CONTAINS, self.MatchType.ICONTAINS):
+            return pattern in text
+        return False
 
     def __str__(self):
         return self.display_name

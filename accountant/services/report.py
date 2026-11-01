@@ -45,7 +45,10 @@ def build_report(dashboard, year, at=None):
     corps = {d.corporation.corporation_id: d.corporation.name for d in divisions}
     division_corps = {d.pk: d.corporation.corporation_id for d in divisions}
     rules = {r.ref_type: r for r in dashboard.ref_rules.prefetch_related("reason_rules")}
-    reasons = {key: {r.reason: r for r in rule.reason_rules.all()} for key, rule in rules.items()}
+    reasons = {
+        key: sorted(rule.reason_rules.all(), key=lambda reason: (reason.order, reason.pk))
+        for key, rule in rules.items()
+    }
     excluded_entity_rules = list(dashboard.excluded_entities.all())
     excluded_entity_ids = {rule.entity_id for rule in excluded_entity_rules}
     revenue, expenses = Row("revenue", "Revenue total"), Row("expenses", "Expenses total")
@@ -96,7 +99,14 @@ def build_report(dashboard, year, at=None):
             parent = section.children.setdefault(ref_key, Row(key, label))
             parent.add(month, amount)
             if rule and rule.split_reasons and not other:
-                reason_rule = reasons[rule.ref_type].get(entry["reason"])
+                reason_rule = next(
+                    (
+                        candidate
+                        for candidate in reasons[rule.ref_type]
+                        if candidate.matches(entry["reason"])
+                    ),
+                    None,
+                )
                 reason_key = str(reason_rule.pk) if reason_rule else "other"
                 label = reason_rule.display_name if reason_rule else "Other reasons"
                 child_key = f"{key}-reason-{reason_key}"
@@ -121,11 +131,11 @@ def build_report(dashboard, year, at=None):
         for ref_key, row in section.children.items():
             rule = rules.get(ref_key)
             if rule and rule.split_reasons:
-                reason_order = {str(r.pk): r.order for r in rule.reason_rules.all()}
+                reason_order = {str(r.pk): (r.order, r.pk) for r in rule.reason_rules.all()}
                 row.children = dict(
                     sorted(
                         row.children.items(),
-                        key=lambda item: (reason_order.get(item[0], 99999), item[1].label),
+                        key=lambda item: reason_order.get(item[0], (99999, 0)),
                     )
                 )
             for child in row.children.values():

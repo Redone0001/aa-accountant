@@ -77,6 +77,7 @@ class ReasonRuleForm(forms.ModelForm):
 class ReasonInline(admin.TabularInline):
     model = ReasonRule
     form = ReasonRuleForm
+    fields = ("reason", "match_type", "display_name", "order")
     extra = 0
 
 

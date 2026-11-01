@@ -68,7 +68,7 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
-Restart the AA web services and Celery workers after upgrading. Version 0.1.3 adds the excluded-entity table, so run `migrate` before restarting. Existing custom display names are preserved.
+Restart the AA web services and Celery workers after upgrading. Version 0.1.4 adds reason match types, so run `migrate` before restarting. Existing reason rules retain exact case-sensitive matching and custom display names are preserved.
 
 ## Category rules
 
@@ -84,7 +84,20 @@ Both the dashboard inline editor and the standalone rule editor provide all 162 
 | `brokers_fee` | Market fees | Bundle into Other | No |
 | `market_escrow` | Market escrow | Ignore | No |
 
-For Contributions, add exact reason values such as `moon_rent` → **Moon rentals** and `corp_dues` → **Corporation dues**. Matching is case-sensitive and includes whitespace; inspect the raw CSV to find the ESI reason value. An unmatched or empty reason is grouped into **Other reasons**. Human names never participate in matching.
+For Contributions, add reason values such as `moon_rent` → **Moon rentals** and `corp_dues` → **Corporation dues**. Configure these under **Django admin → AA Accountant → Ref type rules → your rule → Reason rules**, with **Split reasons** enabled and **Mode** set to **Separate row**.
+
+Each reason rule has a **Match type**:
+
+| Match type | Rule text | Examples that match |
+| --- | --- | --- |
+| Exact (case-sensitive, default) | `Moon rent` | `Moon rent` |
+| Exact (case-insensitive) | `Moon rent` | `Moon rent`, `MOON RENT`, `moon rent` |
+| Contains (case-sensitive) | `rent` | `Moon rent for October`, `rent payment` |
+| Contains (case-insensitive) | `goo` | `Alliance Goo`, `alliance goo October`, `ALLIANCE GOO` |
+
+Enter the text or keyword without quotation marks. Contains is a literal substring match, not a regular expression or fuzzy spelling correction. Spaces and punctuation remain significant; case-insensitive matching ignores letter case only. The original journal reason is preserved in storage and CSV exports.
+
+**The first matching rule wins:** lower **Order** values run first; ties use the older rule (lowest database ID). Put specific rules before broad keywords. An entry belongs to one reason category only, so overlapping rules cannot double-count it. Matching is scoped to that ref type and dashboard. An unmatched or empty reason is grouped into **Other reasons**. Human display names never participate in matching.
 
 **Separate row** creates its own category; **Bundle into Other** merges into the section's Other row; **Ignore** excludes entries from both rows and totals. Unknown ref types follow the dashboard's unconfigured mode, initially Other. Reasons are subdivided only for separate rows.
 

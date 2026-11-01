@@ -39,6 +39,7 @@ def test_reason_admin_preserves_significant_spaces(board):
         data={
             "ref_rule": rule.pk,
             "reason": " moon_rent ",
+            "match_type": "exact",
             "display_name": "Moon rental",
             "order": 1,
         }
