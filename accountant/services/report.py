@@ -7,6 +7,7 @@ from django.utils.timezone import now
 
 from accountant.conf import retention_cutoff
 from accountant.models import DisplayMode, JournalEntry
+from accountant.ref_types import ref_type_display_name
 
 ZERO = Decimal("0")
 
@@ -81,7 +82,7 @@ def build_report(dashboard, year, at=None):
             label = (
                 "Other"
                 if other
-                else (rule.display_name if rule else entry["ref_type"].replace("_", " ").title())
+                else (rule.display_name if rule else ref_type_display_name(entry["ref_type"]))
             )
             key = f"{section.key}-{ref_key}"
             parent = section.children.setdefault(ref_key, Row(key, label))

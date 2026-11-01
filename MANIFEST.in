@@ -1,5 +1,6 @@
 include manage.py
 recursive-include docs *.md
 recursive-include tests *.py *.cjs
+recursive-include tests/fixtures *.txt
 recursive-include accountant/templates *.html
 recursive-include accountant/static *.css *.js

@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 
+from accountant.forms import RefTypeRuleForm
 from accountant.models import (
     Corporation,
     Dashboard,
@@ -37,6 +38,7 @@ class DivisionAdmin(admin.ModelAdmin):
 
 class RefInline(admin.TabularInline):
     model = RefTypeRule
+    form = RefTypeRuleForm
     extra = 0
     show_change_link = True
 
@@ -66,6 +68,7 @@ class ReasonInline(admin.TabularInline):
 
 @admin.register(RefTypeRule)
 class RefRuleAdmin(admin.ModelAdmin):
+    form = RefTypeRuleForm
     list_display = ("display_name", "dashboard", "ref_type", "mode", "split_reasons")
     list_filter = ("dashboard", "mode")
     inlines = (ReasonInline,)

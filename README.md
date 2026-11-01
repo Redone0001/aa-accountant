@@ -58,11 +58,23 @@ Restart your AA web services, Celery workers, and Celery beat using your deploym
 4. Open **Accountant → Wallet sources → Connect / reauthorize corporation** and choose an AA token or complete EVE SSO. A character is checked against its current corporation and roles. Repeat for every corporation. Tokens and refresh secrets stay in django-esi's token store.
 5. In Django admin → **AA Accountant → Corporations**, rename divisions as desired or disable imports for unused divisions. All seven returned wallet divisions are enabled initially. Disabling import preserves already stored history until retention prunes it.
 6. In **Dashboards**, create a named dashboard, choose the wallet divisions across any corporations, and select its default ISK unit. If allowed groups is empty, all users with `view_dashboard` may view it. Otherwise only those groups (and superusers) may view it. Staff status alone does not bypass this restriction.
-7. Add reference type rules inline. Use their change link, or **Ref type rules**, to add reason rules. Staff configuration access uses Django's ordinary per-model admin permissions. Configuration administrators are trusted to choose the data and groups a dashboard exposes.
+7. Add reference type rules inline by selecting from the predefined list. Each option shows a readable name and its exact ESI identifier. The display name fills automatically and can be customized. Use their change link, or **Ref type rules**, to add reason rules. Staff configuration access uses Django's ordinary per-model admin permissions. Configuration administrators are trusted to choose the data and groups a dashboard exposes.
+
+To upgrade an existing installation:
+
+```sh
+pip install --upgrade git+https://github.com/Redone0001/aa-accountant.git
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+Restart the AA web services and Celery workers after upgrading. The reference type dropdown does not change the database schema or existing custom display names.
 
 ## Category rules
 
 Rules are per dashboard, so the same journal can produce different reports without rewriting stored history.
+
+Both the dashboard inline editor and the standalone rule editor provide all 162 supplied reference types. [The reference type catalog](accountant/ref_types.py) defines a display name for every allowed identifier, including readable acronym names such as **ESS escrow transfer**, **CSPA fee**, and **GM PLEX fee refund**. ESI's original identifier spellings are preserved. New rules must select an allowed value; existing custom identifiers remain editable after upgrading. Imported journal entries still accept future ESI types and follow the dashboard's unconfigured-type policy.
 
 | Backend value | Display name | Mode | Split reasons |
 | --- | --- | --- | --- |
