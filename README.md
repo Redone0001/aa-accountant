@@ -29,7 +29,7 @@ ACCOUNTANT_RETENTION_MONTHS = 6
 # Daily at midnight, using your AA installation's Celery timezone.
 CELERYBEAT_SCHEDULE["accountant_daily_sync"] = {
     "task": "accountant.tasks.sync_all",
-    "schedule": crontab(minute=0, hour="0"),
+    "schedule": crontab(minute=0, hour=0),
 }
 ```
 
