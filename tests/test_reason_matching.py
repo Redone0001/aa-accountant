@@ -145,6 +145,84 @@ def test_reason_form_rejects_empty_keywords_and_invalid_match_modes(board):
     assert "match_type" in form.errors
 
 
+def test_shared_display_name_merges_keywords_months_corporations_and_overlap(
+    board, source, second_source, entry
+):
+    board.divisions.add(second_source)
+    ref = split_rule(board)
+    first = ReasonRule.objects.create(
+        ref_rule=ref, reason="ABC", match_type="icontains", display_name="abc, ABC, ZXY"
+    )
+    ReasonRule.objects.create(
+        ref_rule=ref, reason="ZXY", match_type="icontains", display_name=first.display_name
+    )
+    entry(reason="abc payment", amount="100.12", date=datetime(2026, 6, 1, tzinfo=timezone.utc))
+    entry(reason="ABC and ZXY", amount="20.34")
+    entry(division=second_source, reason="ZXY payment", amount="50.56")
+    entry(reason="abc refund", amount="-10.78")
+    entry(division=second_source, reason="ZXY refund", amount="-30.90")
+    entry(reason="Unmatched", amount="7.89")
+    report = build_report(board, 2026, AT)
+    children = report["revenue"].children[ref.ref_type].children
+    assert list(children) == [str(first.pk), "other"]
+    merged = children[str(first.pk)]
+    assert merged.label == "abc, ABC, ZXY"
+    assert merged.amounts[5:7] == [Decimal("100.12"), Decimal("70.90")]
+    assert merged.total == Decimal("171.02")
+    assert merged.children[str(source.corporation.corporation_id)].total == Decimal("120.46")
+    assert merged.children[str(second_source.corporation.corporation_id)].total == Decimal("50.56")
+    expenses = report["expenses"].children[ref.ref_type].children
+    assert list(expenses) == [str(first.pk)]
+    assert expenses[str(first.pk)].total == Decimal("-41.68")
+    assert report["revenue"].total == Decimal("178.91")
+    assert report["profit"].total == Decimal("137.23")
+    assert JournalEntry.objects.count() == 6
+
+
+def test_group_order_uses_first_configured_rule_even_without_matches(board, entry):
+    ref = split_rule(board)
+    first = ReasonRule.objects.create(ref_rule=ref, reason="ABC", display_name="Shared", order=5)
+    middle = ReasonRule.objects.create(
+        ref_rule=ref, reason="Other", display_name="Middle", order=10
+    )
+    ReasonRule.objects.create(
+        ref_rule=ref, reason="ZXY", match_type="contains", display_name="Shared", order=20
+    )
+    entry(reason="Other")
+    entry(reason="ZXY payment")
+    children = build_report(board, 2026, AT)["revenue"].children[ref.ref_type].children
+    assert list(children) == [str(first.pk), str(middle.pk)]
+    assert len({row.key for row in children.values()}) == 2
+
+
+def test_group_names_are_exact_scoped_and_distinct_from_automatic_other(board, entry):
+    ref = split_rule(board)
+    rules = [
+        ReasonRule.objects.create(ref_rule=ref, reason=text, display_name=name)
+        for text, name in [("ABC", "Shared"), ("ZXY", "shared"), ("DEF", "Other reasons")]
+    ]
+    separate = split_rule(board, ref_type="corporation_account_withdrawal")
+    separate_reason = ReasonRule.objects.create(
+        ref_rule=separate, reason="ABC", display_name="Shared"
+    )
+    for text in ("ABC", "ZXY", "DEF", "Unmatched"):
+        entry(reason=text)
+    entry(ref_type=separate.ref_type, reason="ABC", amount="50")
+    report = build_report(board, 2026, AT)
+    children = report["revenue"].children[ref.ref_type].children
+    assert list(children) == [*(str(rule.pk) for rule in rules), "other"]
+    assert all(row.total == 100 for row in children.values())
+    assert len({row.key for row in children.values()}) == 4
+    assert (
+        report["revenue"].children[separate.ref_type].children[str(separate_reason.pk)].total == 50
+    )
+    rules[1].display_name = "Shared"
+    rules[1].save()
+    merged = build_report(board, 2026, AT)["revenue"].children[ref.ref_type].children
+    assert list(merged) == [str(rules[0].pk), str(rules[2].pk), "other"]
+    assert merged[str(rules[0].pk)].total == 200
+
+
 def test_admin_can_save_contains_case_insensitive_rule(client, user, board, entry):
     user.is_staff = user.is_superuser = True
     user.save()
@@ -157,6 +235,7 @@ def test_admin_can_save_contains_case_insensitive_rule(client, user, board, entr
     html = response.content.decode()
     assert 'name="reason_rules-__prefix__-match_type"' in html
     assert "Contains (case-insensitive)" in html
+    assert "Rules with the same display name merge into one row" in html
     response = client.post(
         url,
         {

@@ -49,6 +49,14 @@ def build_report(dashboard, year, at=None):
         key: sorted(rule.reason_rules.all(), key=lambda reason: (reason.order, reason.pk))
         for key, rule in rules.items()
     }
+    reason_groups = {}
+    for ref_type, candidates in reasons.items():
+        # Reuse the first rule's ID for safe row keys and stable configured ordering.
+        by_name = {}
+        reason_groups[ref_type] = {
+            candidate.pk: str(by_name.setdefault(candidate.display_name, candidate.pk))
+            for candidate in candidates
+        }
     excluded_entity_rules = list(dashboard.excluded_entities.all())
     excluded_entity_ids = {rule.entity_id for rule in excluded_entity_rules}
     revenue, expenses = Row("revenue", "Revenue total"), Row("expenses", "Expenses total")
@@ -107,7 +115,9 @@ def build_report(dashboard, year, at=None):
                     ),
                     None,
                 )
-                reason_key = str(reason_rule.pk) if reason_rule else "other"
+                reason_key = (
+                    reason_groups[rule.ref_type][reason_rule.pk] if reason_rule else "other"
+                )
                 label = reason_rule.display_name if reason_rule else "Other reasons"
                 child_key = f"{key}-reason-{reason_key}"
                 parent = parent.children.setdefault(reason_key, Row(child_key, label))

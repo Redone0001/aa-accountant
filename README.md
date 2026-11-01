@@ -68,7 +68,7 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
-Restart the AA web services and Celery workers after upgrading. Version 0.1.4 adds reason match types, so run `migrate` before restarting. Existing reason rules retain exact case-sensitive matching and custom display names are preserved.
+Restart the AA web services and Celery workers after upgrading. Version 0.1.5 merges reason rows with identical display names; no new migration is needed for this version. Run `migrate` to apply any earlier pending migrations, including the reason match types added in 0.1.4. Existing reason rules retain their match types and custom display names.
 
 ## Category rules
 
@@ -98,6 +98,8 @@ Each reason rule has a **Match type**:
 Enter the text or keyword without quotation marks. Contains is a literal substring match, not a regular expression or fuzzy spelling correction. Spaces and punctuation remain significant; case-insensitive matching ignores letter case only. The original journal reason is preserved in storage and CSV exports.
 
 **The first matching rule wins:** lower **Order** values run first; ties use the older rule (lowest database ID). Put specific rules before broad keywords. An entry belongs to one reason category only, so overlapping rules cannot double-count it. Matching is scoped to that ref type and dashboard. An unmatched or empty reason is grouped into **Other reasons**. Human display names never participate in matching.
+
+Reason rules with **identical display names** merge into one row within the same reference type and dashboard. For example, add `ABC` and `ZXY` as two **Contains (case-insensitive)** rules, both named **abc, ABC, ZXY**. Payments containing `abc`, `ABC` or `ZXY` contribute to that single row, including its monthly and corporation totals. A payment containing both keywords counts once. Display names must use identical spelling and capitalization. The earliest rule by Order and then database ID determines the merged row's position, even if that rule has no matching entries. Revenue and expenses remain separate, as do different reference types. The automatic **Other reasons** bucket stays separate from configured rules, even if a rule uses that display name.
 
 **Separate row** creates its own category; **Bundle into Other** merges into the section's Other row; **Ignore** excludes entries from both rows and totals. Unknown ref types follow the dashboard's unconfigured mode, initially Other. Reasons are subdivided only for separate rows.
 

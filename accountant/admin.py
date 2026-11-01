@@ -72,6 +72,10 @@ class ReasonRuleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["reason"].strip = False
+        self.fields["display_name"].help_text = (
+            "Rules with the same display name merge into one row within this reference type. "
+            "Use identical spelling and capitalization."
+        )
 
 
 class ReasonInline(admin.TabularInline):
