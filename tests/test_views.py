@@ -51,7 +51,7 @@ def test_real_aa_templates_report_and_configuration(client, user, grant, board, 
         assert response.status_code == 200
         html = response.content.decode()
         assert "Contributions" in html
-        assert "0.1 B. isk" in html
+        assert "0.10 B. isk" in html
         assert "100 000 000.12 ISK" in html
         assert 'data-parent="revenue-player_donation"' in html
         assert "Northstar Industries" in html

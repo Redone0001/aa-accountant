@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aa-accountant"
-version = "0.1.1"
+version = "0.1.2"
 description = "Corporation wallet history and monthly profit-and-loss dashboards for Alliance Auth"
 readme = "README.md"
 requires-python = ">=3.10"

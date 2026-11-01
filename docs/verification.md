@@ -1,4 +1,4 @@
-# Verification — AA Accountant 0.1.1
+# Verification — AA Accountant 0.1.2
 
 Verified on November 1, 2026 with Python 3.12.14, Alliance Auth 5.6.0, Django 5.2.18, django-esi 10.1.0 and SQLite. ESI, SSO credentials, the Celery broker and Redis are test doubles; this does not claim a live corporation import or production deployment.
 
@@ -22,12 +22,12 @@ Verified on November 1, 2026 with Python 3.12.14, Alliance Auth 5.6.0, Django 5.
 | Exact reason matching and Other | Reason rules and fallback with corporation children; exact, case mismatch, trailing whitespace and missing reason tests; admin preserves whitespace |
 | Internal transfer exclusion | Party-ID/ref-type classification; one-sided same-corporation transfer, cross-selected-corporation policy and external payment tests |
 | Corporation drill-down | Recursive statement rows; merging several divisions of one corporation; browser checks expand category → reason → two corporations and collapse descendants |
-| Full / million / billion ISK | Decimal formatter, space grouping, default billion unit; format and browser unit-switch tests; full precision remains in hover text and CSV |
+| Full / million / billion ISK | Decimal formatter with exactly two decimal places and trailing zeros, space grouping, default billion unit; whole, fractional, negative and zero display values tested; full precision remains in hover text and CSV |
 | Full monthly statement | Twelve UTC calendar-month columns, totals, current MTD marker and unavailable-month distinction; month/cutoff/year tests |
 | Access restrictions | Real AA main-character gate plus plugin permissions and per-dashboard groups; anonymous, unauthorized, hidden dashboard and forged export selection tests |
 | Installation package | Wheel and sdist built; 0.1.0 installed-wheel app loading, fresh migrations and system checks verified outside the source checkout; 0.1.1 adds the catalog and admin JavaScript without schema changes |
 
-Final automated results: **41 pytest tests passed**; Ruff checks and formatting passed; Django system checks found no issues; migration drift check found no changes. Chromium checks passed for the new reference type selector, default names, custom labels and dynamic inline rows. Previous desktop nested rows, collapse/expand, unit switching and mobile statement scrolling checks also passed. Screenshots are under `output/`.
+Final automated results: **45 pytest tests passed**; Ruff checks and formatting passed; Django system checks found no issues; migration drift check found no changes. Chromium checks passed for the reference type selector, default names, custom labels and dynamic inline rows. Previous desktop nested rows, collapse/expand, unit switching and mobile statement scrolling checks also passed. Screenshots are under `output/`.
 
 The deployer must provide their existing AA installation, live EVE SSO credentials, an authorized corporation character, a running worker/beat/broker and production database. MySQL was not exercised in this macOS environment; the ORM import supports Django's MySQL upsert branch as well as SQLite. ESI can initially return only its 30-day journal window, so retained history grows after installation.
 

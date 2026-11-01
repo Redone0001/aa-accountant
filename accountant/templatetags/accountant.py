@@ -16,7 +16,7 @@ def isk(value, unit="isk"):
     with localcontext() as ctx:
         ctx.prec = 50
         amount = Decimal(value) / scale
-        number = f"{amount:,.2f}".replace(",", " ").rstrip("0").rstrip(".")
+        number = f"{amount:,.2f}".replace(",", " ")
         # Keep a visible sign for small nonzero amounts when the chosen unit rounds to zero.
         if amount and abs(amount) < Decimal("0.005"):
             return ("−" if amount < 0 else "") + "<0.01" + suffix
