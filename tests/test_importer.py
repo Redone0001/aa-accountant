@@ -76,6 +76,38 @@ def test_decimal_decoding_pagination_and_token_refresh(token):
         assert get.call_args.kwargs["timeout"] == 30
 
 
+def test_all_ten_pages_of_thousand_entries_are_retrieved(token):
+    responses = [
+        ([{"id": page * 1000 + offset} for offset in range(1000)], {"X-Pages": "10"})
+        for page in range(10)
+    ]
+    with EsiClient(token) as esi, patch.object(esi, "get", side_effect=responses) as get:
+        pages = list(esi.journal_pages(98000001, 1))
+    assert len(pages) == 10
+    assert [call.kwargs["params"]["page"] for call in get.call_args_list] == list(range(1, 11))
+    assert {item["id"] for page in pages for item in page} == set(range(10000))
+
+
+def test_new_sync_keeps_retained_entries_no_longer_returned_by_esi(source, token):
+    source.corporation.token = token
+    source.corporation.save()
+    old = payload(id=1, date="2026-07-01T00:00:00Z")
+    save_page(source, [old], retention_cutoff_at())
+    with (
+        patch("accountant.services.importer.EsiClient") as factory,
+        patch("accountant.services.importer.retention_cutoff", return_value=retention_cutoff_at()),
+    ):
+        esi = factory.return_value.__enter__.return_value
+        esi.identity.return_value = (source.corporation.corporation_id, source.corporation.name, [])
+        esi.journal_pages.return_value = [[payload()]]
+        sync_corporation(source.corporation.pk)
+        sync_corporation(source.corporation.pk)
+    assert set(JournalEntry.objects.values_list("entry_id", flat=True)) == {
+        old["id"],
+        payload()["id"],
+    }
+
+
 @pytest.mark.parametrize(
     "status,error",
     [(403, EsiError), (420, RetryableEsiError), (429, RetryableEsiError), (503, RetryableEsiError)],
