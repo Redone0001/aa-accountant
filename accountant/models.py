@@ -124,6 +124,41 @@ class Dashboard(models.Model):
         ).distinct()
 
 
+class ExcludedEntity(models.Model):
+    class EntityType(models.TextChoices):
+        CHARACTER = "character", "Character"
+        CORPORATION = "corporation", "Corporation"
+
+    dashboard = models.ForeignKey(
+        Dashboard, on_delete=models.CASCADE, related_name="excluded_entities"
+    )
+    entity_id = models.PositiveBigIntegerField(
+        validators=[MinValueValidator(1)],
+        help_text="EVE character or corporation ID. Entries with this ID as either party "
+        "are excluded from this dashboard, for every reference type.",
+    )
+    entity_type = models.CharField(
+        max_length=11, choices=EntityType.choices, default=EntityType.CHARACTER
+    )
+    display_name = models.CharField(max_length=128, blank=True)
+
+    class Meta:
+        ordering = ("display_name", "entity_id")
+        verbose_name_plural = "excluded entities"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("dashboard", "entity_id"), name="acct_unique_excluded_entity"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(entity_id__gte=1), name="acct_excluded_entity_positive"
+            ),
+        ]
+
+    def __str__(self):
+        identity = f"{self.get_entity_type_display()} #{self.entity_id}"
+        return f"{self.display_name} ({identity})" if self.display_name else identity
+
+
 class RefTypeRule(models.Model):
     dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE, related_name="ref_rules")
     ref_type = models.CharField(max_length=128, validators=[ref_validator])

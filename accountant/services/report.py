@@ -46,6 +46,8 @@ def build_report(dashboard, year, at=None):
     division_corps = {d.pk: d.corporation.corporation_id for d in divisions}
     rules = {r.ref_type: r for r in dashboard.ref_rules.prefetch_related("reason_rules")}
     reasons = {key: {r.reason: r for r in rule.reason_rules.all()} for key, rule in rules.items()}
+    excluded_entity_rules = list(dashboard.excluded_entities.all())
+    excluded_entity_ids = {rule.entity_id for rule in excluded_entity_rules}
     revenue, expenses = Row("revenue", "Revenue total"), Row("expenses", "Expenses total")
     start = datetime(year, 1, 1, tzinfo=timezone.utc)
     end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
@@ -56,10 +58,16 @@ def build_report(dashboard, year, at=None):
     ).values(
         "division_id", "date", "ref_type", "reason", "amount", "first_party_id", "second_party_id"
     )
-    excluded_transfers = ignored = 0
+    excluded_transfers = excluded_entity_entries = ignored = 0
     with localcontext() as ctx:
         ctx.prec = 50
         for entry in entries.iterator(chunk_size=2000):
+            if (
+                entry["first_party_id"] in excluded_entity_ids
+                or entry["second_party_id"] in excluded_entity_ids
+            ):
+                excluded_entity_entries += 1
+                continue
             corp_id = division_corps[entry["division_id"]]
             if is_internal_transfer(
                 entry, corp_id, corps, dashboard.exclude_between_selected_corporations
@@ -142,5 +150,7 @@ def build_report(dashboard, year, at=None):
         "divisions": divisions,
         "cutoff": cutoff,
         "excluded_transfers": excluded_transfers,
+        "excluded_entity_entries": excluded_entity_entries,
+        "excluded_entity_rules": excluded_entity_rules,
         "ignored": ignored,
     }

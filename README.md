@@ -68,7 +68,7 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
-Restart the AA web services and Celery workers after upgrading. The reference type dropdown does not change the database schema or existing custom display names.
+Restart the AA web services and Celery workers after upgrading. Version 0.1.3 adds the excluded-entity table, so run `migrate` before restarting. Existing custom display names are preserved.
 
 ## Category rules
 
@@ -95,6 +95,16 @@ Positive entries appear under revenue and negative entries under expenses. A cat
 `corporation_account_withdrawal` entries whose first and second parties both equal the journal's corporation ID are always excluded. This covers the −30 B / +30 B division transfer in the supplied example, even when only one side's division is selected.
 
 By default, that ref type is also excluded when both parties are corporations selected by the dashboard. Turn off **Exclude between selected corporations** to count those cross-corporation payments. External withdrawals and payments to characters still count. Transfers are classified by ref type and party IDs, never by coincidentally equal amounts. All raw entries remain available in CSV exports, including ignored categories and transfers. The export marks same-corporation transfers; cross-corporation exclusion depends on the dashboard configuration.
+
+### Excluded characters and corporations (money storage)
+
+In **Django admin → AA Accountant → Dashboards → your dashboard → Excluded entities**, add the character or corporation's **EVE entity ID**, choose its type, and optionally give it a readable name. These IDs do not need to belong to a connected wallet source or a character registered in AA. Staff administrators need the usual add/change/delete/view permissions for **Excluded entities** to manage this list.
+
+Any journal entry with an excluded ID as **either `first_party_id` or `second_party_id`** contributes nothing to revenue, expenses, category/reason totals, corporation details, or net profit. This applies to **all reference types**, both incoming and outgoing amounts, and every selected division. Matching uses the numeric EVE ID; the type and display name describe the entity for administrators.
+
+For example, sending 30.00 B ISK to a storage character in June and receiving it back in July contributes zero to both months' revenue and expenses. No matching counterpart or equal amount is required. Remove the exclusion to include those retained entries again; changing one dashboard's exclusions does not affect another dashboard.
+
+Exclusions are reporting rules. Transactions are still imported and stored under the normal retention policy, and raw CSV exports still include them. The statement shows an excluded-entry count and a list of configured entities. Entity exclusions are checked before transfer and category rules, so each excluded entry is counted once.
 
 ## Time, precision, and retention
 

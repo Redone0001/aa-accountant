@@ -31,7 +31,8 @@
   <tfoot>{% include "accountant/total.html" with row=report.profit %}</tfoot>
 </table>
 </div>
-<div class="acct-meta"><p>{{ report.excluded_transfers }} internal transfer entries excluded · {{ report.ignored }} entries ignored by category rules.</p><p>Retention starts {{ report.cutoff|date:"j M Y" }}. — means outside the retained period or a future month. MTD is the current partial month. Totals include imported data only; hover amounts for full ISK.</p></div>
+<div class="acct-meta"><p>{{ report.excluded_transfers }} internal transfer entries excluded · {{ report.excluded_entity_entries }} entries involving excluded entities · {{ report.ignored }} entries ignored by category rules.</p><p>Retention starts {{ report.cutoff|date:"j M Y" }}. — means outside the retained period or a future month. MTD is the current partial month. Totals include imported data only; hover amounts for full ISK.</p></div>
+{% if report.excluded_entity_rules %}<details class="acct-source-details"><summary>Excluded entities ({{ report.excluded_entity_rules|length }})</summary><ul>{% for exclusion in report.excluded_entity_rules %}<li>{{ exclusion }}</li>{% endfor %}</ul><p>Entries involving either party listed here are excluded from this dashboard. Raw journal history and CSV exports include them.</p></details>{% endif %}
 <details class="acct-source-details"><summary>Included wallet sources ({{ report.divisions|length }})</summary><ul>{% for division in report.divisions %}<li>{{ division }} · {% if division.last_success %}Last sync {{ division.last_success|date:"j M Y H:i" }} UTC{% else %}<strong>Not yet synchronized</strong>{% endif %}{% if not division.enabled or not division.corporation.enabled %} · Import disabled{% endif %}{% if division.last_error %} · <span class="acct-negative">{{ division.last_error }}</span>{% endif %}</li>{% empty %}<li>No wallet divisions configured.</li>{% endfor %}</ul></details>
 {% endif %}
 {% endblock %}

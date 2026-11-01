@@ -5,6 +5,7 @@ from accountant.forms import RefTypeRuleForm
 from accountant.models import (
     Corporation,
     Dashboard,
+    ExcludedEntity,
     JournalEntry,
     ReasonRule,
     RefTypeRule,
@@ -43,11 +44,24 @@ class RefInline(admin.TabularInline):
     show_change_link = True
 
 
+class ExcludedEntityInline(admin.TabularInline):
+    model = ExcludedEntity
+    fields = ("entity_type", "entity_id", "display_name")
+    extra = 0
+
+
 @admin.register(Dashboard)
 class DashboardAdmin(admin.ModelAdmin):
     list_display = ("name", "default_unit", "unconfigured_mode")
     filter_horizontal = ("divisions", "allowed_groups")
-    inlines = (RefInline,)
+    inlines = (RefInline, ExcludedEntityInline)
+
+
+@admin.register(ExcludedEntity)
+class ExcludedEntityAdmin(admin.ModelAdmin):
+    list_display = ("display_name", "entity_type", "entity_id", "dashboard")
+    list_filter = ("dashboard", "entity_type")
+    search_fields = ("display_name", "=entity_id")
 
 
 class ReasonRuleForm(forms.ModelForm):
