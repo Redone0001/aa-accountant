@@ -1,0 +1,38 @@
+{% extends "accountant/base.html" %}
+{% load accountant %}
+{% block page_title %}{{ dashboard.name }} · Accountant{% endblock %}
+{% block accountant_content %}
+<header class="acct-heading acct-heading-row">
+  <div><p class="acct-eyebrow">FINANCIAL OVERVIEW / {{ year }}</p><h1>{{ dashboard.name }}</h1><p>{{ dashboard.description|default:"Monthly profit & loss across your selected wallets." }}</p></div>
+  <form class="acct-filter" method="get"><div>{{ form.year.label_tag }}{{ form.year }}</div><div>{{ form.unit.label_tag }}{{ form.unit }}</div><button class="acct-button" type="submit">Apply</button></form>
+</header>
+{% if form.errors %}<div class="acct-notice" role="alert">{{ form.errors }}</div>{% endif %}
+{% if report %}
+<div class="acct-summary">
+  <article class="acct-card"><p class="acct-eyebrow">TOTAL REVENUE</p><strong class="acct-positive" title="{{ report.revenue.total|isk }} ISK">{{ report.revenue.total|isk:unit }}</strong><span>Positive journal entries</span></article>
+  <article class="acct-card"><p class="acct-eyebrow">TOTAL EXPENSES</p><strong class="acct-negative" title="{{ report.expenses.total|isk }} ISK">{{ report.expenses.total|isk:unit }}</strong><span>Negative journal entries</span></article>
+  <article class="acct-card acct-net"><p class="acct-eyebrow">NET PROFIT / LOSS</p><strong class="{% if report.profit.total < 0 %}acct-negative{% else %}acct-positive{% endif %}" title="{{ report.profit.total|isk }} ISK">{{ report.profit.total|isk:unit }}</strong><span>Revenue plus expenses</span></article>
+</div>
+<div class="acct-table-heading"><h2>Monthly statement</h2><div><button class="acct-link" data-expand-all type="button">Expand all</button><button class="acct-link" data-collapse-all type="button">Collapse all</button></div></div>
+<div class="acct-table-wrap" tabindex="0" role="region" aria-label="Monthly profit and loss, scroll horizontally">
+<table class="acct-table">
+  <caption class="visually-hidden">{{ dashboard.name }} monthly profit and loss for {{ year }}. Expand categories for corporation details. Amounts in {{ unit }}.</caption>
+  <thead><tr><th scope="col">CATEGORY / CORPORATION</th>{% for month in report.months %}<th scope="col">{{ month.label }}{% if month.current %}<span class="acct-current">MTD</span>{% endif %}</th>{% endfor %}<th scope="col">TOTAL</th></tr></thead>
+  <tbody class="acct-revenue">
+    <tr class="acct-section"><th scope="row" colspan="14">REVENUE</th></tr>
+    {% for row in report.revenue.children.values %}{% include "accountant/row.html" with row=row parent="" depth=0 %}{% empty %}<tr><td colspan="14" class="acct-empty">No revenue in this reporting period.</td></tr>{% endfor %}
+    {% include "accountant/total.html" with row=report.revenue %}
+  </tbody>
+  <tbody class="acct-expenses">
+    <tr class="acct-section"><th scope="row" colspan="14">EXPENSES</th></tr>
+    {% for row in report.expenses.children.values %}{% include "accountant/row.html" with row=row parent="" depth=0 %}{% empty %}<tr><td colspan="14" class="acct-empty">No expenses in this reporting period.</td></tr>{% endfor %}
+    {% include "accountant/total.html" with row=report.expenses %}
+  </tbody>
+  <tfoot>{% include "accountant/total.html" with row=report.profit %}</tfoot>
+</table>
+</div>
+<div class="acct-meta"><p>{{ report.excluded_transfers }} internal transfer entries excluded · {{ report.ignored }} entries ignored by category rules.</p><p>Retention starts {{ report.cutoff|date:"j M Y" }}. — means outside the retained period or a future month. MTD is the current partial month. Totals include imported data only; hover amounts for full ISK.</p></div>
+<details class="acct-source-details"><summary>Included wallet sources ({{ report.divisions|length }})</summary><ul>{% for division in report.divisions %}<li>{{ division }} · {% if division.last_success %}Last sync {{ division.last_success|date:"j M Y H:i" }} UTC{% else %}<strong>Not yet synchronized</strong>{% endif %}{% if not division.enabled or not division.corporation.enabled %} · Import disabled{% endif %}{% if division.last_error %} · <span class="acct-negative">{{ division.last_error }}</span>{% endif %}</li>{% empty %}<li>No wallet divisions configured.</li>{% endfor %}</ul></details>
+{% endif %}
+{% endblock %}
+

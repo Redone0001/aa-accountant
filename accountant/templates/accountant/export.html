@@ -1,0 +1,7 @@
+{% extends "accountant/base.html" %}
+{% block accountant_content %}
+<header class="acct-heading"><p class="acct-eyebrow">YOUR DATA</p><h1>Export wallet history</h1><p>Download stored transactions for one corporation and wallet division.</p></header>
+<div class="acct-card acct-form-card"><form method="get">{{ form.as_p }}<button class="acct-button" type="submit">Download CSV ↓</button></form></div>
+<div class="acct-meta"><p>Dates are inclusive, in UTC. Leave both dates empty to export the full retained history, from {{ cutoff|date:"j M Y" }}.</p><p>Exports include internal transfers and ignored categories. Amounts retain full ISK precision. Formula-like text is prefixed with an apostrophe for spreadsheet safety.</p></div>
+{% endblock %}
+

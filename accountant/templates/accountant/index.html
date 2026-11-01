@@ -1,0 +1,17 @@
+{% extends "accountant/base.html" %}
+{% block accountant_content %}
+<header class="acct-heading"><p class="acct-eyebrow">CORPORATION FINANCE</p><h1>Your dashboards</h1><p>Revenue, expenses, and the story behind every month.</p></header>
+<div class="acct-grid">
+{% for dashboard in dashboards %}
+  <a class="acct-card acct-board" href="{% url 'accountant:dashboard' dashboard.pk %}">
+    <span class="acct-eyebrow">PROFIT &amp; LOSS <span class="acct-arrow">↗</span></span>
+    <h2>{{ dashboard.name }}</h2>
+    <p>{{ dashboard.description|default:"Monthly revenue and expenses" }}</p>
+    <div class="acct-tags">{% for division in dashboard.divisions.all %}<span>{{ division.corporation.name }} · {{ division.division }}</span>{% endfor %}</div>
+  </a>
+{% empty %}
+  <div class="acct-card"><h2>No dashboards available</h2><p>Ask an administrator to create a dashboard and grant your group access.</p>{% if user.is_staff %}<a href="{% url 'admin:accountant_dashboard_add' %}">Create dashboard ↗</a>{% endif %}</div>
+{% endfor %}
+</div>
+{% endblock %}
+

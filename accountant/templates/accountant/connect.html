@@ -1,0 +1,6 @@
+{% extends "accountant/base.html" %}
+{% block accountant_content %}
+<header class="acct-heading"><p class="acct-eyebrow">EVE SSO</p><h1>Connect corporation</h1><p>Use {{ character_name }} to authorize daily wallet journal imports for their corporation.</p></header>
+<div class="acct-card acct-form-card"><p>The character must have Accountant, Junior Accountant, Director or CEO access. All seven wallet divisions are imported by default; administrators can disable individual divisions.</p><form method="post">{% csrf_token %}<input type="hidden" name="_token" value="{{ token_id }}"><button class="acct-button" type="submit">Connect corporation</button></form></div>
+{% endblock %}
+

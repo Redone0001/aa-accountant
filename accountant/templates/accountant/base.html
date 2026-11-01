@@ -1,0 +1,27 @@
+{% extends "allianceauth/base-bs5.html" %}
+{% load static %}
+{% block page_title %}Accountant{% endblock %}
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'accountant/accountant.css' %}">
+{% endblock %}
+{% block content %}
+<div class="accountant">
+  <nav class="acct-nav" aria-label="Accountant navigation">
+    <a class="acct-brand" href="{% url 'accountant:index' %}"><span aria-hidden="true">◈</span> ACCOUNTANT</a>
+    <div class="acct-links">
+      <a href="{% url 'accountant:index' %}">Dashboards</a>
+      {% if perms.accountant.export_journal %}<a href="{% url 'accountant:export' %}">Export history</a>{% endif %}
+      {% if perms.accountant.manage_sources %}<a href="{% url 'accountant:sources' %}">Wallet sources</a>{% endif %}
+      {% if user.is_staff %}<a href="{% url 'admin:accountant_dashboard_changelist' %}">Configuration ↗</a>{% endif %}
+    </div>
+  </nav>
+  {% block accountant_content %}{% endblock %}
+  <footer class="acct-footer">Corporation finance · ISK · All reporting dates are UTC</footer>
+</div>
+{% endblock %}
+{% block extra_javascript %}
+{{ block.super }}
+<script src="{% static 'accountant/accountant.js' %}" defer></script>
+{% endblock %}
+

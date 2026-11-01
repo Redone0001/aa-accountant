@@ -1,0 +1,7 @@
+{% load accountant %}
+<tr id="{{ row.key }}" data-row-id="{{ row.key }}" data-parent="{{ parent }}" {% if parent %}hidden{% endif %}>
+  <th scope="row" class="acct-depth-{{ depth }}">{% if row.children %}<button class="acct-toggle" type="button" data-toggle-row="{{ row.key }}" aria-expanded="false"><span aria-hidden="true">›</span><span class="visually-hidden">Expand </span>{{ row.label }}</button>{% else %}<span class="acct-leaf">{{ row.label }}</span>{% endif %}</th>
+  {% for amount in row|report_cells:report.months %}<td title="{% if amount != None %}{{ amount|isk }} ISK{% endif %}">{{ amount|isk:unit }}</td>{% endfor %}<td class="acct-row-total" title="{{ row.total|isk }} ISK">{{ row.total|isk:unit }}</td>
+</tr>
+{% for child in row.children.values %}{% include "accountant/row.html" with row=child parent=row.key depth=depth|add:"1" %}{% endfor %}
+

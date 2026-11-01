@@ -1,0 +1,88 @@
+from django import forms
+from django.contrib import admin
+
+from accountant.models import (
+    Corporation,
+    Dashboard,
+    JournalEntry,
+    ReasonRule,
+    RefTypeRule,
+    WalletDivision,
+)
+
+
+class DivisionInline(admin.TabularInline):
+    model = WalletDivision
+    extra = 0
+    fields = ("division", "name", "enabled", "last_success", "last_error")
+    readonly_fields = ("last_success", "last_error")
+
+
+@admin.register(Corporation)
+class CorporationAdmin(admin.ModelAdmin):
+    list_display = ("name", "corporation_id", "enabled")
+    readonly_fields = ("corporation_id", "name", "token")
+    inlines = (DivisionInline,)
+
+    def has_add_permission(self, request):
+        return False  # Use the SSO connect flow to verify corporation access.
+
+
+@admin.register(WalletDivision)
+class DivisionAdmin(admin.ModelAdmin):
+    list_display = ("corporation", "division", "name", "enabled", "last_success", "last_error")
+    list_filter = ("corporation", "enabled")
+    readonly_fields = ("last_attempt", "last_success", "last_error")
+
+
+class RefInline(admin.TabularInline):
+    model = RefTypeRule
+    extra = 0
+    show_change_link = True
+
+
+@admin.register(Dashboard)
+class DashboardAdmin(admin.ModelAdmin):
+    list_display = ("name", "default_unit", "unconfigured_mode")
+    filter_horizontal = ("divisions", "allowed_groups")
+    inlines = (RefInline,)
+
+
+class ReasonRuleForm(forms.ModelForm):
+    class Meta:
+        model = ReasonRule
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["reason"].strip = False
+
+
+class ReasonInline(admin.TabularInline):
+    model = ReasonRule
+    form = ReasonRuleForm
+    extra = 0
+
+
+@admin.register(RefTypeRule)
+class RefRuleAdmin(admin.ModelAdmin):
+    list_display = ("display_name", "dashboard", "ref_type", "mode", "split_reasons")
+    list_filter = ("dashboard", "mode")
+    inlines = (ReasonInline,)
+
+
+@admin.register(JournalEntry)
+class JournalAdmin(admin.ModelAdmin):
+    list_display = ("date", "division", "ref_type", "amount", "reason")
+    list_filter = ("division", "ref_type")
+    search_fields = ("reason", "description", "=entry_id")
+    readonly_fields = [field.name for field in JournalEntry._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -1,0 +1,3 @@
+{% load accountant %}
+<tr class="acct-total"><th scope="row">{{ row.label }}</th>{% for amount in row|report_cells:report.months %}<td class="{% if amount < 0 %}acct-negative{% elif amount > 0 %}acct-positive{% endif %}" title="{% if amount != None %}{{ amount|isk }} ISK{% endif %}">{{ amount|isk:unit }}</td>{% endfor %}<td class="acct-row-total {% if row.total < 0 %}acct-negative{% elif row.total > 0 %}acct-positive{% endif %}" title="{{ row.total|isk }} ISK">{{ row.total|isk:unit }}</td></tr>
+

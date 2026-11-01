@@ -1,0 +1,12 @@
+{% extends "accountant/base.html" %}
+{% block accountant_content %}
+<header class="acct-heading acct-heading-row"><div><p class="acct-eyebrow">DATA CONNECTIONS</p><h1>Wallet sources</h1><p>Authorize a corporation character with access to the corporation wallets.</p></div><a class="acct-button" href="{% url 'accountant:connect' %}">Connect / reauthorize corporation ↗</a></header>
+{% for corporation in corporations %}
+<section class="acct-card acct-source"><div class="acct-heading-row"><h2>{{ corporation.name }} <small>#{{ corporation.corporation_id }}</small></h2>{% if corporation.enabled %}<form action="{% url 'accountant:sync' corporation.pk %}" method="post">{% csrf_token %}<button class="acct-button" type="submit">Sync now</button></form>{% else %}<span>Import disabled</span>{% endif %}</div>
+{% if not corporation.token_id %}<p class="acct-negative">No token. Reauthorize this corporation.</p>{% endif %}
+<table class="acct-status"><thead><tr><th>Division</th><th>Import</th><th>Last successful sync (UTC)</th><th>Status</th></tr></thead><tbody>
+{% for division in corporation.divisions.all %}<tr><td>{{ division.division }} · {{ division.name }}</td><td>{{ division.enabled|yesno:"Enabled,Disabled" }}</td><td>{{ division.last_success|date:"j M Y H:i"|default:"Never" }}</td><td>{% if division.last_error %}<span class="acct-negative">{{ division.last_error }}</span>{% elif division.last_success %}Up to date{% else %}Awaiting first sync{% endif %}</td></tr>{% endfor %}
+</tbody></table></section>
+{% empty %}<div class="acct-card"><h2>No corporations connected</h2><p>Connect a character to begin importing wallet journals.</p></div>{% endfor %}
+{% endblock %}
+
